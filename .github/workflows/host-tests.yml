@@ -1,0 +1,23 @@
+name: host tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake --preset host
+
+      - name: Build
+        run: cmake --build --preset host
+
+      - name: Unit tests
+        run: ctest --preset host --output-on-failure
+
+      - name: Mutation check
+        run: python3 host/tests/mutation_check.py
