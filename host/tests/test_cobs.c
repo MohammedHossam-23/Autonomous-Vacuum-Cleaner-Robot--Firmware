@@ -36,6 +36,56 @@ static void test_roundtrip_all_lengths(void)
     }
 }
 
+static void expect_cobs(const uint8_t *in, size_t in_len,
+                        const uint8_t *want, size_t want_len)
+{
+    uint8_t out[32];
+    uint8_t back[32];
+
+    cobs_encode_result enc = cobs_encode(out, sizeof(out), in, in_len);
+    CHECK(enc.status == COBS_ENCODE_OK);
+    CHECK(enc.out_len == want_len);
+    if (enc.out_len == want_len)
+    {
+        CHECK(memcmp(out, want, want_len) == 0);
+    }
+
+    /* Decode the independently supplied vector, not our own output. */
+    cobs_decode_result dec = cobs_decode(back, sizeof(back), want, want_len);
+    CHECK(dec.status == COBS_DECODE_OK);
+    CHECK(dec.out_len == in_len);
+    if (dec.out_len == in_len)
+    {
+        CHECK(memcmp(back, in, in_len) == 0);
+    }
+}
+
+/*
+ * Byte-exact vectors taken from the COBS specification examples (Cheshire &
+ * Baker, "Consistent Overhead Byte Stuffing"; also the worked examples on
+ * Wikipedia). A round-trip test alone cannot catch an encoder and decoder that
+ * are wrong in the same way, so the wire bytes are pinned here.
+ */
+static void test_known_vectors(void)
+{
+    static const uint8_t no_input[] = {0x00}; /* length 0, contents unused */
+    static const uint8_t zero1_in[] = {0x00};
+    static const uint8_t zero1_out[] = {0x01, 0x01};
+    static const uint8_t zero2_in[] = {0x00, 0x00};
+    static const uint8_t zero2_out[] = {0x01, 0x01, 0x01};
+    static const uint8_t mixed_in[] = {0x11, 0x22, 0x00, 0x33};
+    static const uint8_t mixed_out[] = {0x03, 0x11, 0x22, 0x02, 0x33};
+    static const uint8_t plain_in[] = {0x01, 0x02, 0x03, 0x04};
+    static const uint8_t plain_out[] = {0x05, 0x01, 0x02, 0x03, 0x04};
+    static const uint8_t empty_out[] = {0x01};
+
+    expect_cobs(no_input, 0, empty_out, sizeof(empty_out));
+    expect_cobs(zero1_in, sizeof(zero1_in), zero1_out, sizeof(zero1_out));
+    expect_cobs(zero2_in, sizeof(zero2_in), zero2_out, sizeof(zero2_out));
+    expect_cobs(mixed_in, sizeof(mixed_in), mixed_out, sizeof(mixed_out));
+    expect_cobs(plain_in, sizeof(plain_in), plain_out, sizeof(plain_out));
+}
+
 static void test_zero_bytes(void)
 {
     uint8_t payload[64];
@@ -85,6 +135,7 @@ int main(void)
 {
     printf("test_cobs\n");
     RUN(test_roundtrip_all_lengths);
+    RUN(test_known_vectors);
     RUN(test_zero_bytes);
     RUN(test_overflow_is_reported);
     RUN(test_zero_byte_in_encoded_input_is_rejected);

@@ -112,6 +112,39 @@ static void test_truncated_frame_is_rejected(void)
     CHECK(status != AVCR_FRAME_OK || out_len == 0);
 }
 
+/*
+ * Wire-format vector produced by the ROS 2 bridge (proto/ros2serialbridge.py),
+ * which byte-reverses each 32-bit word before calling the independent crccheck
+ * Crc32Mpeg2 implementation. Matching it end-to-end proves the host code agrees
+ * with the other side of the link, not just with itself.
+ */
+static void test_frame_known_vector(void)
+{
+    const uint8_t payload[6] = {0x08, 0x96, 0x01, 0x12, 0x04, 0x1F};
+    const uint8_t expected[11] = {0x0B, 0x08, 0x96, 0x01, 0x12, 0x04,
+                                  0x1F, 0x02, 0xC5, 0x89, 0x8A};
+    uint8_t frame[32];
+    avcr_frame_status status;
+
+    CHECK(avcr_crc32_mpeg2(payload, sizeof(payload)) == 0x8A89C502u);
+
+    size_t frame_len = avcr_frame_encode(payload, sizeof(payload), frame, sizeof(frame), &status);
+    CHECK(status == AVCR_FRAME_OK);
+    CHECK(frame_len == sizeof(expected) + 1u);
+    if (frame_len == sizeof(expected) + 1u)
+    {
+        CHECK(memcmp(frame, expected, sizeof(expected)) == 0);
+        CHECK(frame[frame_len - 1] == 0x00);
+    }
+
+    uint8_t decoded[16];
+    size_t decoded_len = avcr_frame_decode(expected, sizeof(expected), decoded,
+                                           sizeof(decoded), &status);
+    CHECK(status == AVCR_FRAME_OK);
+    CHECK(decoded_len == sizeof(payload));
+    CHECK(memcmp(decoded, payload, sizeof(payload)) == 0);
+}
+
 static void test_small_buffers_are_rejected(void)
 {
     const uint8_t payload[32] = {0};
@@ -136,6 +169,7 @@ int main(void)
     RUN(test_crc_known_answer);
     RUN(test_crc_matches_stm32_word_order);
     RUN(test_crc_depends_on_padding);
+    RUN(test_frame_known_vector);
     RUN(test_roundtrip_lengths);
     RUN(test_decode_without_delimiter);
     RUN(test_corruption_is_detected);
