@@ -37,12 +37,14 @@ void Odom_Init(Odometry_t *odom, TIM_HandleTypeDef *htim_left, TIM_HandleTypeDef
 	odom->left_enc.WheelAngVel= 0.0f;
 	odom->left_enc.wheelDis= 0.0f;
 	odom->left_enc.last_delta_ticks = 0;
+	odom->left_enc.measured_RPM = 0.0f;
 	//right enc
 	odom->right_enc.htim = htim_right;
 	odom->right_enc.last_tick_value= __HAL_TIM_GET_COUNTER(htim_right);
 	odom->right_enc.WheelAngVel= 0.0f;
 	odom->right_enc.wheelDis= 0.0f;
 	odom->right_enc.last_delta_ticks = 0;
+	odom->right_enc.measured_RPM = 0.0f;
 
 	//odom data
 	odom->linear_x = 0.0f;
