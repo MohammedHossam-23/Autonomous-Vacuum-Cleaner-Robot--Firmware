@@ -39,3 +39,5 @@ set_target_properties(avcr_cli PROPERTIES
 )
 target_link_libraries(avcr_cli PRIVATE avcr_core)
 target_compile_options(avcr_cli PRIVATE -Wall -Wextra)
+
+add_subdirectory(tests)
