@@ -146,6 +146,14 @@ avcr-cli tx-decode <hex> [tx|rx]       # decode a frame into protobuf fields
 avcr-cli pid-step --steps 400          # simulated PID step response as CSV
 ```
 
+The test strategy, including independent oracles and mutation results, is
+documented in [`docs/testing.md`](docs/testing.md). To check that the tests still
+detect real defects:
+
+```bash
+python3 host/tests/mutation_check.py
+```
+
 ### STM32CubeIDE
 
 1. Open STM32CubeIDE and import `avcrLowLevelCotrol` as an existing project.
