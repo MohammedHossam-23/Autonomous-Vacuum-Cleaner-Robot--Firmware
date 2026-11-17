@@ -1,0 +1,17 @@
+# CMake / Ninja
+build/
+compile_commands.json
+.cache/
+
+# Build artifacts
+*.elf
+*.bin
+*.hex
+*.map
+*.o
+*.obj
+*.a
+
+# Editor/tooling
+.vscode/
+.idea/
